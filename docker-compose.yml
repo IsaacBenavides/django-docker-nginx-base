@@ -1,0 +1,52 @@
+version: '3'
+
+
+services:
+  db:
+    image: postgres:13
+    volumes:
+      - .data/:/tmp
+    ports:
+      - "5432:5432"
+    container_name: prueba_django_db
+    env_file:
+      - .env
+    environment:
+      PGDATA: /tmp
+    restart: always
+
+
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    container_name: prueba_django_backend
+    volumes:
+      - .:/src
+      - static_volume:/src/static
+      - media_volume:/src/media
+    env_file:
+      - .env
+    command: >
+      sh -c "gunicorn prueba_django.wsgi:application --bind 0.0.0.0:8000"
+    expose:
+      - 8000
+    depends_on:
+      - db
+
+  nginx:
+    restart: always
+    build: ./nginx
+    volumes:
+      - static_volume:/src/static
+      - media_volume:/src/media
+    ports:
+      - 9656:80
+    depends_on:
+      - web
+  
+
+volumes:
+  static_volume:
+  media_volume:
